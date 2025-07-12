@@ -29,5 +29,12 @@ namespace Controllers
             var resultado = _vendingQuery.ProcesarCompra(request);
             return Ok(resultado);
         }
+
+        [HttpGet("estado-cambio")]
+        public IActionResult ObtenerEstadoCambio()
+        {
+            var estado = _vendingQuery.ObtenerEstadoCambio();
+            return Ok(estado);
+        }
     }
 }

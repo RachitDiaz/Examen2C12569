@@ -23,7 +23,6 @@ namespace Infrastructure
             new MonedaModel(50, 50),
             new MonedaModel(25, 25),
         };
-
         public List<BebidaModel> ObtenerBebidas() => bebidas;
 
         public List<MonedaModel> ObtenerMonedas() => monedas;
@@ -34,7 +33,22 @@ namespace Infrastructure
             if (bebida != null)
                 bebida.Cantidad -= cantidadComprada;
         }
+        public Dictionary<int, int> ObtenerEstadoCambio()
+        {
+            Dictionary<int, int> estado = new Dictionary<int, int>();
 
+            for (int i = 0; i < monedas.Count; i++)
+            {
+                MonedaModel moneda = monedas[i];
+
+                if (moneda.Valor != 1000) 
+                {
+                    estado.Add(moneda.Valor, moneda.Cantidad);
+                }
+            }
+
+            return estado;
+        }
         public void ActualizarMonedas(List<MonedaModel> cambioEntregado)
         {
             foreach (var m in cambioEntregado)

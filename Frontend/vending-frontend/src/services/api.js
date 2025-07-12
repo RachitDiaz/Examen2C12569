@@ -7,3 +7,7 @@ const api = axios.create({
 export const obtenerBebidas = () => api.get('/bebidas');
 
 export const realizarCompra = (compra) => api.post('/comprar', compra);
+
+export function obtenerEstadoCambio() {
+  return  api.get('/estado-cambio');
+}

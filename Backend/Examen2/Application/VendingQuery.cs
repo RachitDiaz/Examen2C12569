@@ -31,10 +31,12 @@ namespace Application
 
             return resultado;
         }
-
+        public Dictionary<int, int> ObtenerEstadoCambio()
+        {
+            return _repository.ObtenerEstadoCambio();
+        }
         public CompraResponseDTO ProcesarCompra(CompraRequestDTO request)
         {
-            // Buscar bebida por nombre
             BebidaModel bebida = null;
             List<BebidaModel> bebidas = _repository.ObtenerBebidas();
             for (int i = 0; i < bebidas.Count; i++)
@@ -51,16 +53,13 @@ namespace Application
                 return Error("Refresco no disponible.");
             }
 
-            // Validar stock
             if (bebida.Cantidad < request.Cantidad)
             {
                 return Error("No hay suficiente stock del refresco.");
             }
 
-            // Calcular total
             int totalCompra = bebida.Precio * request.Cantidad;
 
-            // Calcular total ingresado
             int totalIngresado = 0;
             foreach (KeyValuePair<int, int> item in request.DineroIngresado)
             {
@@ -72,11 +71,9 @@ namespace Application
                 return Error("Dinero insuficiente para completar la compra.");
             }
 
-            // Calcular cambio
             int cambio = totalIngresado - totalCompra;
             List<MonedaModel> monedasDisponibles = _repository.ObtenerMonedas();
 
-            // Ordenar monedas de mayor a menor
             List<MonedaModel> monedasOrdenadas = new List<MonedaModel>();
             for (int i = monedasDisponibles.Count - 1; i >= 0; i--)
             {
@@ -118,10 +115,8 @@ namespace Application
                 return Error("No hay monedas suficientes para dar el cambio.");
             }
 
-            // Actualizar stock
             _repository.ActualizarBebida(bebida.Nombre, request.Cantidad);
 
-            // Agregar monedas ingresadas
             List<MonedaModel> monedasIngresadas = new List<MonedaModel>();
             foreach (KeyValuePair<int, int> item in request.DineroIngresado)
             {

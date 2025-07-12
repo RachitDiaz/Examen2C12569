@@ -7,5 +7,7 @@ namespace Application
     {
         List<BebidaDTO> ObtenerBebidas();
         CompraResponseDTO ProcesarCompra(CompraRequestDTO request);
+
+        Dictionary<int, int> ObtenerEstadoCambio();
     }
 }
