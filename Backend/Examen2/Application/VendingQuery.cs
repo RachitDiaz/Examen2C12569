@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Domain.DTOs;
 using Application.Interfaces;
 using Domain;
@@ -18,113 +17,144 @@ namespace Application
 
         public List<BebidaDTO> ObtenerBebidas()
         {
-            return _repository.ObtenerBebidas()
-                .Select(b => new BebidaDTO
-                {
-                    Nombre = b.Nombre,
-                    Precio = b.Precio,
-                    Cantidad = b.Cantidad
-                }).ToList();
+            List<BebidaModel> bebidas = _repository.ObtenerBebidas();
+            List<BebidaDTO> resultado = new List<BebidaDTO>();
+
+            for (int i = 0; i < bebidas.Count; i++)
+            {
+                BebidaDTO dto = new BebidaDTO();
+                dto.Nombre = bebidas[i].Nombre;
+                dto.Precio = bebidas[i].Precio;
+                dto.Cantidad = bebidas[i].Cantidad;
+                resultado.Add(dto);
+            }
+
+            return resultado;
         }
 
         public CompraResponseDTO ProcesarCompra(CompraRequestDTO request)
         {
-            var bebida = ObtenerBebida(request.NombreBebida);
-            if (bebida == null)
-                return Error("Refresco no disponible.");
-
-            if (!HayStockDisponible(bebida, request.Cantidad))
-                return Error("No hay suficiente stock del refresco.");
-
-            int totalCompra = CalcularTotal(bebida.Precio, request.Cantidad);
-            int totalIngresado = CalcularDineroIngresado(request.DineroIngresado);
-
-            if (totalIngresado < totalCompra)
-                return Error("Dinero insuficiente para completar la compra.");
-
-            int cambio = totalIngresado - totalCompra;
-
-            var monedasDisponibles = _repository.ObtenerMonedas();
-            var desgloseCambio = CalcularCambio(cambio, monedasDisponibles);
-
-            if (desgloseCambio == null)
-                return Error("No hay monedas suficientes para dar el cambio.");
-
-            ActualizarStockYMonedas(bebida, request, desgloseCambio);
-
-            return new CompraResponseDTO
+            // Buscar bebida por nombre
+            BebidaModel bebida = null;
+            List<BebidaModel> bebidas = _repository.ObtenerBebidas();
+            for (int i = 0; i < bebidas.Count; i++)
             {
-                Exito = true,
-                Mensaje = "Compra realizada con éxito.",
-                Cambio = cambio,
-                DesgloseCambio = desgloseCambio
-            };
-        }
-
-        private Bebida? ObtenerBebida(string nombre)
-        {
-            return _repository.ObtenerBebidas().FirstOrDefault(b => b.Nombre == nombre);
-        }
-
-        private bool HayStockDisponible(Bebida bebida, int cantidadSolicitada)
-        {
-            return bebida.Cantidad >= cantidadSolicitada;
-        }
-
-        private int CalcularTotal(int precioUnitario, int cantidad)
-        {
-            return precioUnitario * cantidad;
-        }
-
-        private int CalcularDineroIngresado(Dictionary<int, int> dinero)
-        {
-            return dinero.Sum(p => p.Key * p.Value);
-        }
-
-        private void ActualizarStockYMonedas(Bebida bebida, CompraRequestDTO request, Dictionary<int, int> cambio)
-        {
-            _repository.ActualizarBebida(bebida.Nombre, request.Cantidad);
-
-            var monedasIngresadas = request.DineroIngresado
-                .Select(p => new Moneda(p.Key, p.Value)).ToList();
-            _repository.AgregarMonedasIngresadas(monedasIngresadas);
-
-            var monedasCambio = cambio.Select(p => new Moneda(p.Key, p.Value)).ToList();
-            _repository.ActualizarMonedas(monedasCambio);
-        }
-
-        private Dictionary<int, int>? CalcularCambio(int cambio, List<Moneda> monedasDisponibles)
-        {
-            var resultado = new Dictionary<int, int>();
-            var ordenado = monedasDisponibles
-                .Where(m => m.Cantidad > 0 && m.Valor <= cambio)
-                .OrderByDescending(m => m.Valor)
-                .ToList();
-
-            foreach (var moneda in ordenado)
-            {
-                int cantidadNecesaria = cambio / moneda.Valor;
-                int cantidadUsar = Math.Min(cantidadNecesaria, moneda.Cantidad);
-
-                if (cantidadUsar > 0)
+                if (bebidas[i].Nombre == request.NombreBebida)
                 {
-                    resultado[moneda.Valor] = cantidadUsar;
-                    cambio -= moneda.Valor * cantidadUsar;
+                    bebida = bebidas[i];
+                    break;
                 }
             }
 
-            return cambio == 0 ? resultado : null;
+            if (bebida == null)
+            {
+                return Error("Refresco no disponible.");
+            }
+
+            // Validar stock
+            if (bebida.Cantidad < request.Cantidad)
+            {
+                return Error("No hay suficiente stock del refresco.");
+            }
+
+            // Calcular total
+            int totalCompra = bebida.Precio * request.Cantidad;
+
+            // Calcular total ingresado
+            int totalIngresado = 0;
+            foreach (KeyValuePair<int, int> item in request.DineroIngresado)
+            {
+                totalIngresado += item.Key * item.Value;
+            }
+
+            if (totalIngresado < totalCompra)
+            {
+                return Error("Dinero insuficiente para completar la compra.");
+            }
+
+            // Calcular cambio
+            int cambio = totalIngresado - totalCompra;
+            List<MonedaModel> monedasDisponibles = _repository.ObtenerMonedas();
+
+            // Ordenar monedas de mayor a menor
+            List<MonedaModel> monedasOrdenadas = new List<MonedaModel>();
+            for (int i = monedasDisponibles.Count - 1; i >= 0; i--)
+            {
+                MonedaModel actual = monedasDisponibles[i];
+                int j = 0;
+                while (j < monedasOrdenadas.Count && actual.Valor < monedasOrdenadas[j].Valor)
+                {
+                    j++;
+                }
+                monedasOrdenadas.Insert(j, actual);
+            }
+
+            Dictionary<int, int> desglose = new Dictionary<int, int>();
+
+            for (int i = 0; i < monedasOrdenadas.Count; i++)
+            {
+                MonedaModel moneda = monedasOrdenadas[i];
+
+                if (moneda.Cantidad > 0 && moneda.Valor <= cambio)
+                {
+                    int cantidadNecesaria = cambio / moneda.Valor;
+                    int cantidadUsar = moneda.Cantidad;
+
+                    if (cantidadNecesaria < cantidadUsar)
+                    {
+                        cantidadUsar = cantidadNecesaria;
+                    }
+
+                    if (cantidadUsar > 0)
+                    {
+                        desglose[moneda.Valor] = cantidadUsar;
+                        cambio -= cantidadUsar * moneda.Valor;
+                    }
+                }
+            }
+
+            if (cambio != 0)
+            {
+                return Error("No hay monedas suficientes para dar el cambio.");
+            }
+
+            // Actualizar stock
+            _repository.ActualizarBebida(bebida.Nombre, request.Cantidad);
+
+            // Agregar monedas ingresadas
+            List<MonedaModel> monedasIngresadas = new List<MonedaModel>();
+            foreach (KeyValuePair<int, int> item in request.DineroIngresado)
+            {
+                MonedaModel m = new MonedaModel(item.Key, item.Value);
+                monedasIngresadas.Add(m);
+            }
+            _repository.AgregarMonedasIngresadas(monedasIngresadas);
+
+            List<MonedaModel> monedasVuelto = new List<MonedaModel>();
+            foreach (KeyValuePair<int, int> item in desglose)
+            {
+                MonedaModel m = new MonedaModel(item.Key, item.Value);
+                monedasVuelto.Add(m);
+            }
+            _repository.ActualizarMonedas(monedasVuelto);
+
+            CompraResponseDTO respuesta = new CompraResponseDTO();
+            respuesta.Exito = true;
+            respuesta.Mensaje = "Compra realizada con éxito.";
+            respuesta.Cambio = totalIngresado - totalCompra;
+            respuesta.DesgloseCambio = desglose;
+
+            return respuesta;
         }
 
         private CompraResponseDTO Error(string mensaje)
         {
-            return new CompraResponseDTO
-            {
-                Exito = false,
-                Mensaje = mensaje,
-                Cambio = 0,
-                DesgloseCambio = new Dictionary<int, int>()
-            };
+            CompraResponseDTO respuesta = new CompraResponseDTO();
+            respuesta.Exito = false;
+            respuesta.Mensaje = mensaje;
+            respuesta.Cambio = 0;
+            respuesta.DesgloseCambio = new Dictionary<int, int>();
+            return respuesta;
         }
     }
 }

@@ -5,10 +5,10 @@ namespace Application.Interfaces
 {
     public interface IVendingRepository
     {
-        List<Bebida> ObtenerBebidas();
-        List<Moneda> ObtenerMonedas();
+        List<BebidaModel> ObtenerBebidas();
+        List<MonedaModel> ObtenerMonedas();
         void ActualizarBebida(string nombre, int cantidadComprada);
-        void ActualizarMonedas(List<Moneda> cambioEntregado);
-        void AgregarMonedasIngresadas(List<Moneda> ingreso);
+        void ActualizarMonedas(List<MonedaModel> cambioEntregado);
+        void AgregarMonedasIngresadas(List<MonedaModel> ingreso);
     }
 }

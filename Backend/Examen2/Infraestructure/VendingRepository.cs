@@ -7,26 +7,26 @@ namespace Infrastructure
 {
     public class VendingRepository : IVendingRepository
     {
-        private static List<Bebida> bebidas = new()
+        private static List<BebidaModel> bebidas = new()
         {
-            new Bebida("Coca Cola", 800, 10),
-            new Bebida("Pepsi", 750, 8),
-            new Bebida("Fanta", 950, 10),
-            new Bebida("Sprite", 975, 15),
+            new BebidaModel("Coca Cola", 800, 10),
+            new BebidaModel("Pepsi", 750, 8),
+            new BebidaModel("Fanta", 950, 10),
+            new BebidaModel("Sprite", 975, 15),
         };
 
-        private static List<Moneda> monedas = new()
+        private static List<MonedaModel> monedas = new()
         {
-            new Moneda(1000, 0),
-            new Moneda(500, 20),
-            new Moneda(100, 30),
-            new Moneda(50, 50),
-            new Moneda(25, 25),
+            new MonedaModel(1000, 0),
+            new MonedaModel(500, 20),
+            new MonedaModel(100, 30),
+            new MonedaModel(50, 50),
+            new MonedaModel(25, 25),
         };
 
-        public List<Bebida> ObtenerBebidas() => bebidas;
+        public List<BebidaModel> ObtenerBebidas() => bebidas;
 
-        public List<Moneda> ObtenerMonedas() => monedas;
+        public List<MonedaModel> ObtenerMonedas() => monedas;
 
         public void ActualizarBebida(string nombre, int cantidadComprada)
         {
@@ -35,7 +35,7 @@ namespace Infrastructure
                 bebida.Cantidad -= cantidadComprada;
         }
 
-        public void ActualizarMonedas(List<Moneda> cambioEntregado)
+        public void ActualizarMonedas(List<MonedaModel> cambioEntregado)
         {
             foreach (var m in cambioEntregado)
             {
@@ -45,7 +45,7 @@ namespace Infrastructure
             }
         }
 
-        public void AgregarMonedasIngresadas(List<Moneda> ingreso)
+        public void AgregarMonedasIngresadas(List<MonedaModel> ingreso)
         {
             foreach (var m in ingreso)
             {

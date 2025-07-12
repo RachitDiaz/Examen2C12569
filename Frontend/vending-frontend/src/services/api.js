@@ -5,3 +5,5 @@ const api = axios.create({
 });
 
 export const obtenerBebidas = () => api.get('/bebidas');
+
+export const realizarCompra = (compra) => api.post('/comprar', compra);
