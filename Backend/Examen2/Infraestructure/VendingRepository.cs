@@ -53,7 +53,7 @@ namespace Infrastructure
         {
             foreach (var m in cambioEntregado)
             {
-                var moneda = monedas.FirstOrDefault(x => x.Valor == m.Valor);
+                var moneda = monedas.FirstOrDefault(x =>    x.Valor == m.Valor);
                 if (moneda != null)
                     moneda.Cantidad -= m.Cantidad;
             }
